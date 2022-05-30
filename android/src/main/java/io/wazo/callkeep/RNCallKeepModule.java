@@ -138,7 +138,6 @@ public class RNCallKeepModule extends ReactContextBaseJavaModule {
         }
         return instance;
     }
->>>>>>> 8de84e3e139bedf4cc9a949b786e4fb287c7dc6a
 
     public static WritableMap getSettings(@Nullable Context context) {
         if (_settings == null) {
@@ -931,11 +930,6 @@ public class RNCallKeepModule extends ReactContextBaseJavaModule {
 
             getReactApplicationContext().startActivity(focusIntent);
         }
-    }
-
-    private void initializeTelecomManager() {
-        Context context = this.getAppContext();
-        initializeTelecomManager(context);
     }
 
     public static void initializeTelecomManager(Context context) {
