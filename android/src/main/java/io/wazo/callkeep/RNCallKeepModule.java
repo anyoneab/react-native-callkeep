@@ -157,7 +157,7 @@ public class RNCallKeepModule extends ReactContextBaseJavaModule {
         this.fetchStoredSettings(reactContext);
     }
 
-    private boolean isSelfManaged() {
+    private static boolean isSelfManaged() {
         try {
             return Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && _settings.hasKey("selfManaged") && _settings.getBoolean("selfManaged");
         } catch (Exception e) {
@@ -205,14 +205,13 @@ public class RNCallKeepModule extends ReactContextBaseJavaModule {
         }
     }
 
-    public void initializeTelecomManager() {
-        Context context = this.getAppContext();
+    public static void initializeTelecomManager(Context context) {
         if (context == null) {
             Log.w(TAG, "[RNCallKeepModule][initializeTelecomManager] no react context found.");
             return;
         }
         ComponentName cName = new ComponentName(context, VoiceConnectionService.class);
-        String appName = this.getApplicationName(context);
+        String appName = getApplicationName(context);
 
         handle = new PhoneAccountHandle(cName, appName);
         telecomManager = (TelecomManager) context.getSystemService(Context.TELECOM_SERVICE);
@@ -325,7 +324,7 @@ public class RNCallKeepModule extends ReactContextBaseJavaModule {
     }
 
     public static void staticDisplayIncomingCall(String uuid, String number, String callerName) {
-        Log.d(TAG, "[RNCallKeepModule] displayIncomingCall, uuid: " + uuid + ", number: " + number + ", callerName: " + callerName + ", hasVideo: " + hasVideo);
+        Log.d(TAG, "[RNCallKeepModule] displayIncomingCall, uuid: " + uuid + ", number: " + number + ", callerName: " + callerName);
 
         Bundle extras = new Bundle();
         Uri uri = Uri.fromParts(PhoneAccount.SCHEME_TEL, number, null);
@@ -333,7 +332,7 @@ public class RNCallKeepModule extends ReactContextBaseJavaModule {
         extras.putParcelable(TelecomManager.EXTRA_INCOMING_CALL_ADDRESS, uri);
         extras.putString(EXTRA_CALLER_NAME, callerName);
         extras.putString(EXTRA_CALL_UUID, uuid);
-        extras.putString(EXTRA_HAS_VIDEO, String.valueOf(hasVideo));
+        extras.putString(EXTRA_HAS_VIDEO, "false");
 
         telecomManager.addNewIncomingCall(handle, extras);
     }
@@ -786,10 +785,6 @@ public class RNCallKeepModule extends ReactContextBaseJavaModule {
 
     @ReactMethod
     public void hasPhoneAccount(Promise promise) {
-        if (telecomManager == null) {
-            this.initializeTelecomManager();
-        }
-
         promise.resolve(hasPhoneAccount());
     }
 
@@ -932,15 +927,6 @@ public class RNCallKeepModule extends ReactContextBaseJavaModule {
         }
     }
 
-    public static void initializeTelecomManager(Context context) {
-        if (telecomManager != null) {
-            return;
-        }
-
-        ComponentName cName = new ComponentName(context, VoiceConnectionService.class);
-        String appName = getApplicationName(context);
-    }
-
     public static void onRequestPermissionsResult(int requestCode, String[] grantedPermissions, int[] grantResults) {
         int permissionsIndex = 0;
         List<String> permsList = Arrays.asList(permissions);
@@ -959,22 +945,17 @@ public class RNCallKeepModule extends ReactContextBaseJavaModule {
     }
 
     public static void registerPhoneAccount(Context appContext) {
-        if (telephonyManager != null) {
-          return;
-        }
-
         if (!isConnectionServiceAvailable()) {
             Log.w(TAG, "[RNCallKeepModule] registerPhoneAccount ignored due to no ConnectionService");
             return;
         }
 
-        this.initializeTelecomManager();
-        Context context = this.getAppContext();
-        if (context == null) {
+        initializeTelecomManager(appContext);
+        if (appContext == null) {
             Log.w(TAG, "[RNCallKeepModule][registerPhoneAccount] no react context found.");
             return;
         }
-        String appName = this.getApplicationName(context);
+        String appName = getApplicationName(appContext);
 
         PhoneAccount.Builder builder = new PhoneAccount.Builder(handle, appName);
         if (_settings == null || isSelfManaged()) {
@@ -992,7 +973,7 @@ public class RNCallKeepModule extends ReactContextBaseJavaModule {
 
         PhoneAccount account = builder.build();
 
-        telephonyManager = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
+        telephonyManager = (TelephonyManager) appContext.getSystemService(Context.TELEPHONY_SERVICE);
 
         telecomManager.registerPhoneAccount(account);
     }
@@ -1037,14 +1018,6 @@ public class RNCallKeepModule extends ReactContextBaseJavaModule {
     }
 
     private boolean hasPhoneAccount() {
-        if (telecomManager == null) {
-            this.initializeTelecomManager();
-        }
-
-        if (isSelfManaged()) {
-            return true;
-        }
-
         return isConnectionServiceAvailable() && telecomManager != null &&
             hasPermissions() && telecomManager.getPhoneAccount(handle) != null &&
             telecomManager.getPhoneAccount(handle).isEnabled();
