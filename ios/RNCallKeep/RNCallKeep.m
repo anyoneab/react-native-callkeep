@@ -165,18 +165,6 @@ RCT_EXPORT_MODULE()
     }
 }
 
-<<<<<<< HEAD
-- (void) initCallKitProvider {
-#ifdef DEBUG
-    NSLog(@"[RNCallKeep][initCallKitProvider]");
-#endif
-
-    NSDictionary *settings = [[NSUserDefaults standardUserDefaults] dictionaryForKey:@"RNCallKeepSettings"];
-    sharedProvider = [[CXProvider alloc] initWithConfiguration:[RNCallKeep getProviderConfiguration:settings]];
-
-    self.callKeepProvider = sharedProvider;
-    [self.callKeepProvider setDelegate:self queue:nil];
-=======
 + (NSDictionary *) getSettings {
     return [[NSUserDefaults standardUserDefaults] dictionaryForKey:@"RNCallKeepSettings"];
 }
@@ -188,7 +176,6 @@ RCT_EXPORT_MODULE()
             sharedProvider = [[CXProvider alloc] initWithConfiguration:[RNCallKeep getProviderConfiguration:settings]];
         }
     }
->>>>>>> 8de84e3e139bedf4cc9a949b786e4fb287c7dc6a
 }
 
 + (NSString *) getAudioOutput {
