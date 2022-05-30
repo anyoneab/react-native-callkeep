@@ -809,8 +809,9 @@ public class RNCallKeepModule extends ReactContextBaseJavaModule {
     }
 
     private static boolean hasPhoneAccount() {
-        return isConnectionServiceAvailable() && telecomManager != null
-            && telecomManager.getPhoneAccount(handle) != null && telecomManager.getPhoneAccount(handle).isEnabled();
+        return isConnectionServiceAvailable() && telecomManager != null &&
+             hasPermissions() && telecomManager.getPhoneAccount(handle) != null &&
+             telecomManager.getPhoneAccount(handle).isEnabled();
     }
 
     private void registerReceiver() {
