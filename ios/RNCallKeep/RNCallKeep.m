@@ -160,7 +160,6 @@ RCT_EXPORT_MODULE()
             body, @"data",
             nil
         ];
-        if (_delayedEvents == nil) _delayedEvents = [NSMutableArray array];
         [_delayedEvents addObject:dictionary];
     }
 }
@@ -321,11 +320,6 @@ RCT_EXPORT_METHOD(startCall:(NSString *)uuidString
 #ifdef DEBUG
     NSLog(@"[RNCallKeep][startCall] uuidString = %@", uuidString);
 #endif
-
-    if (self.callKeepProvider == nil) {
-      [self initCallKitProvider];
-    }
-    
     int _handleType = [RNCallKeep getHandleType:handleType];
     NSUUID *uuid = [[NSUUID alloc] initWithUUIDString:uuidString];
     CXHandle *callHandle = [[CXHandle alloc] initWithType:_handleType value:handle];
@@ -769,11 +763,9 @@ RCT_EXPORT_METHOD(getAudioRoutes: (RCTPromiseResolveBlock)resolve
     callUpdate.hasVideo = hasVideo;
     callUpdate.localizedCallerName = localizedCallerName;
 
-    RNCallKeep *callKeep = [RNCallKeep allocWithZone: nil];
-    if (callKeep.callKeepProvider == nil) {
-        [callKeep initCallKitProvider];
-    }
-    [callKeep.callKeepProvider reportNewIncomingCallWithUUID:uuid update:callUpdate completion:^(NSError * _Nullable error) {
+    [RNCallKeep initCallKitProvider];
+    [sharedProvider reportNewIncomingCallWithUUID:uuid update:callUpdate completion:^(NSError * _Nullable error) {
+        RNCallKeep *callKeep = [RNCallKeep allocWithZone: nil];
         [callKeep sendEventWithNameWrapper:RNCallKeepDidDisplayIncomingCall body:@{
             @"error": error && error.localizedDescription ? error.localizedDescription : @"",
             @"errorCode": error ? [callKeep getIncomingCallErrorCode:error] : @"",
@@ -866,12 +858,7 @@ RCT_EXPORT_METHOD(getAudioRoutes: (RCTPromiseResolveBlock)resolve
 #ifdef DEBUG
     NSLog(@"[RNCallKeep][getProviderConfiguration]");
 #endif
-    NSString *localizedName = @"unknown";
-    if (settings && settings[@"appName"]) {
-        localizedName =settings[@"appName"];
-    }
-
-    CXProviderConfiguration *providerConfiguration = [[CXProviderConfiguration alloc] initWithLocalizedName:localizedName];
+    CXProviderConfiguration *providerConfiguration = [[CXProviderConfiguration alloc] initWithLocalizedName:settings[@"appName"]];
     providerConfiguration.supportsVideo = YES;
     providerConfiguration.maximumCallGroups = 3;
     providerConfiguration.maximumCallsPerCallGroup = 1;
@@ -886,10 +873,8 @@ RCT_EXPORT_METHOD(getAudioRoutes: (RCTPromiseResolveBlock)resolve
     if (settings[@"maximumCallsPerCallGroup"]) {
         providerConfiguration.maximumCallsPerCallGroup = [settings[@"maximumCallsPerCallGroup"] integerValue];
     }
-    NSString *img = @"callkit.png";
     if (settings[@"imageName"]) {
-        img = settings[@"imageName"];
-        providerConfiguration.iconTemplateImageData = UIImagePNGRepresentation([UIImage imageNamed:img]);
+        providerConfiguration.iconTemplateImageData = UIImagePNGRepresentation([UIImage imageNamed:settings[@"imageName"]]);
     }
     if (settings[@"ringtoneSound"]) {
         providerConfiguration.ringtoneSound = settings[@"ringtoneSound"];
